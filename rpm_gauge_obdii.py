@@ -77,62 +77,64 @@ def add_line(grid, draw_line, color):
     for new_coord in draw_line:
         grid[new_coord[0], new_coord[1]] = color
 
-
+# Borrowed from roguebasin:
+# http://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm#Python
 def bresenham(origin, dest):
-    # debug code
-    print origin
-    print dest
-    # end debug code
-    x0 = origin[0]; y0 = origin[1]
-    x1 = dest[0]; y1 = dest[1]
-    steep = abs(y1 - y0) > abs(x1 - x0)
+    """Bresenham's Line Algorithm
+    Produces a list of tuples from start and end
 
-    if steep:
-        x0, y0 = y0, x0
+    >>> points1 = get_line((0, 0), (3, 4))
+    >>> points2 = get_line((3, 4), (0, 0))
+    >>> assert(set(points1) == set(points2))
+    >>> print points1
+    [(0, 0), (1, 1), (1, 2), (2, 3), (3, 4)]
+    >>> print points2
+    [(3, 4), (2, 3), (1, 2), (1, 1), (0, 0)]
+    """
+    # Setup initial conditions
+    x1, y1 = origin
+    x2, y2 = dest
+    dx = x2 - x1
+    dy = y2 - y1
+
+    # Determine how steep the line is
+    is_steep = abs(dy) > abs(dx)
+
+    # Rotate line
+    if is_steep:
         x1, y1 = y1, x1
+        x2, y2 = y2, x2
 
-    backward = x0 > x1
-    if backward:
-        x0, x1 = x1, x0
-        y0, y1 = y1, y0
+    # Swap start and end points if necessary and store swap state
+    swapped = False
+    if x1 > x2:
+        x1, x2 = x2, x1
+        y1, y2 = y2, y1
+        swapped = True
 
-#    backward = x0 > x1
+    # Recalculate differentials
+    dx = x2 - x1
+    dy = y2 - y1
 
-#    if steep:
-#        x0, y0 = y0, x0
-#        x1, y1 = y1, x1
-#    if backward:
-#        x0, x1 = x1, x0
-#        y0, y1 = y1, y0
+    # Calculate error
+    error = int(dx / 2.0)
+    ystep = 1 if y1 < y2 else -1
 
-    dx = x1 - x0
-    dy = abs(y1 - y0)
-    error = dx / 2
-    y = y0
-
-    if y0 < y1: ystep = 1
-    else: ystep = -1
-
-    result = []
-    #if x0 > x1: xstep = -1
-    #else: xstep = 1
-    # debug code
-    print "x0 = %d" % (x0)
-    print "x1 = %d" % (x1)
-    print "y0 = %d" % (y0)
-    print "y1 = %d" % (y1)
-    for x in range(x0, x1):
-        if steep: result.append((y,x))
-        else: result.append((x,y))
-        error -= dy
+    # Iterate over bounding box generating points between start and end
+    y = y1
+    points = []
+    for x in range(x1, x2 + 1):
+        coord = (y, x) if is_steep else (x, y)
+        points.append(coord)
+        error -= abs(dy)
         if error < 0:
             y += ystep
             error += dx
-    # ensure the line extends from the starting point to the destination
-    # and not vice-versa
-    if backward: result.reverse()
-    print result
-    return result
+
+    # Reverse the list if the coordinates were swapped
+    if swapped:
+        points.reverse()
+    return points
 
 
 while True:
